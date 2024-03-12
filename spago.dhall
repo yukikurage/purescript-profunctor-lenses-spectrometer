@@ -22,6 +22,7 @@ to generate this file without the comments in this block.
   , "prelude"
   , "profunctor"
   , "profunctor-lenses"
+  , "record"
   , "transformers"
   , "tuples"
   ]

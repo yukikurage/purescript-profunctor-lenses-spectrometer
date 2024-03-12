@@ -1,4 +1,4 @@
-module Data.Lens.Spectrometer.AutoGen.Generics where
+module Data.Lens.Spectrometer.Generics where
 
 import Prelude
 
