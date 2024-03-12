@@ -1,4 +1,4 @@
-# Profunctor Lenses Spectrometer
+# Spectrometer Optics
 
 Spectrometer is a Optics for data types of several values typed with the same type.
 
@@ -124,3 +124,16 @@ type Spectrometer s t a b = forall p. Thicken p => Optic p s t a b
 ```
 
 `Closed p => Optics p s t a b` is a Grate and `Wander p => Optics p s t a b` is a Traversal, so the Spectrometer is their intersection.
+
+## Issues?
+
+It seems intuitive to synthesize multiple Spectrometers. (since it represents a fixed length).
+
+```purescript
+composeSpectrometers :: forall s t a b s' t'
+   . Spectrometer s t a b
+  -> Spectrometer s' t' a b
+  -> Spectrometer (s /\ s') (t /\ t') a b
+```
+
+However, such a function `composeSpectrometers` has not been created. It may not be possible theoretically.
