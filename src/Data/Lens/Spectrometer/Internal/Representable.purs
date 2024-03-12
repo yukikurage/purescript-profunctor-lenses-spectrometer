@@ -5,6 +5,7 @@ import Prelude
 import Control.Monad.Reader (ReaderT(..))
 import Data.Distributive (class Distributive)
 import Data.Identity (Identity(..))
+import Data.Pair (Pair(..))
 import Data.Tuple (Tuple(..))
 
 class Distributive f <= Representable i f | f -> i where
@@ -14,6 +15,10 @@ class Distributive f <= Representable i f | f -> i where
 instance Representable Unit Identity where
   tabulate rep = Identity (rep unit)
   index (Identity a) _ = a
+
+instance Representable Boolean Pair where
+  tabulate rep = Pair (rep false) (rep true)
+  index (Pair a b) key = if key then b else a
 
 instance Representable r (Function r) where
   tabulate = identity

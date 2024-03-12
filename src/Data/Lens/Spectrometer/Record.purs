@@ -9,7 +9,7 @@ import Data.Symbol (class IsSymbol)
 import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(..))
 import Prim.Row as R
-import Prim.RowList (class RowToList)
+import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Record (delete, get, insert)
 import Type.Proxy (Proxy(..))
@@ -18,8 +18,20 @@ class RecordSpectrometer :: Row Type -> Row Type -> Type -> Type -> Constraint
 class RecordSpectrometer s t a b | s -> a, t -> b where
   recordSpectrometer :: Spectrometer (Record s) (Record t) a b
 
+data UnitK
+
+foreign import data UnitT :: UnitK
+
+class FillRecord :: RowList UnitK -> Type -> RowList Type -> Constraint
+class FillRecord rl a r | rl a -> r, r -> rl a
+
+instance FillRecord RL.Nil a RL.Nil
+instance (FillRecord rl a rl') => FillRecord (RL.Cons sym UnitT rl) a (RL.Cons sym a rl')
+
 instance
-  ( RowToList s rlS
+  ( FillRecord rl a rlS
+  , FillRecord rl b rlT
+  , RowToList s rlS
   , RowToList t rlT
   , RecordIso rlS rlT s t tupleA tupleB
   , CableToTuple (Cable thickness a) tupleA

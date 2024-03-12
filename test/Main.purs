@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Generic.Rep (class Generic)
 import Data.Lens (review)
-import Data.Lens.Spectrometer (Spectrometer, Spectrometer', spectrometer)
+import Data.Lens.Spectrometer (Spectrometer', spectrometer)
 import Data.Lens.Spectrometer.Generics (genericSpectrometer)
 import Data.Lens.Spectrometer.Record (recordSpectrometer)
 import Data.Show.Generic (genericShow)
@@ -20,7 +20,7 @@ main = do
 
 type SuperTuple a = Tuple5 a a a a a
 
-superSpectrometer :: forall a b. Spectrometer (SuperTuple a) (SuperTuple b) a b
+superSpectrometer :: forall a. Spectrometer' (SuperTuple a) a
 superSpectrometer = spectrometer
 
 superTuple :: Tuple5 Int Int Int Int Int
@@ -40,10 +40,7 @@ testTypeSpectrometer = genericSpectrometer
 testType :: TestType
 testType = review testTypeSpectrometer 1
 
--- | Record Test
-type TestRecord = { a :: Int, b :: Int, c :: Int, d :: Int }
-
-testRecordSpectrometer :: Spectrometer' TestRecord Int
+testRecordSpectrometer :: Spectrometer' { a :: Int, b :: Int, c :: Int, d :: Int } Int
 testRecordSpectrometer = recordSpectrometer
 
 testRecord :: { a :: Int, b :: Int, c :: Int, d :: Int }
