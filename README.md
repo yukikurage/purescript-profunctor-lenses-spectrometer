@@ -127,6 +127,8 @@ type Spectrometer s t a b = forall p. Thicken p => Optic p s t a b
 
 ## Issues?
 
+### Composability
+
 It seems intuitive to synthesize multiple Spectrometers. (since it represents a fixed length).
 
 ```purescript
@@ -137,3 +139,18 @@ composeSpectrometers :: forall s t a b s' t'
 ```
 
 However, such a function `composeSpectrometers` has not been created. It may not be possible theoretically.
+
+### Star Instance
+
+Star instances can be defined in two ways.
+
+```purescript
+instance Applicative f => Thicken (Star f) where
+  thicken = thickenFromWander
+
+instance Distributive f => Thicken (Star f) where
+  thicken = thickenFromClosed
+```
+
+What does this mean?
+I chose thickenFromWander for traverseOf this time, but is it appropriate?
