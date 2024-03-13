@@ -2,30 +2,56 @@ module Test.Main where
 
 import Prelude
 
+import Data.Bounded.Generic (genericBottom, genericTop)
+import Data.Enum (class BoundedEnum, class Enum)
+import Data.Enum.Generic (genericCardinality, genericFromEnum, genericPred, genericSucc, genericToEnum)
 import Data.Generic.Rep (class Generic)
-import Data.Lens (review, sequenceOf)
-import Data.Lens.Spectrometer (Spectrometer', spectrometer)
+import Data.Lens (over, review, toArrayOf)
+import Data.Lens.Spectrometer (boundedEnumSpectrometer, tupleSpectrometer)
 import Data.Lens.Spectrometer.Generics (genericSpectrometer)
 import Data.Lens.Spectrometer.Record (recordSpectrometer)
 import Data.Show.Generic (genericShow)
-import Data.Tuple.Nested (Tuple5)
+import Data.Tuple.Nested (Tuple2)
 import Effect (Effect)
 import Effect.Class.Console (logShow)
 
 main :: Effect Unit
 main = do
-  logShow superTuple
-  logShow testType
-  logShow testRecord
-  void $ logs
+  let
+    superTuple :: Tuple2 Int Int
+    superTuple = review tupleSpectrometer 1
 
-type SuperTuple a = Tuple5 a a a a a
+  logShow superTuple -- (Tuple 1 (Tuple 1 unit))
 
-superSpectrometer :: forall a. Spectrometer' (SuperTuple a) a
-superSpectrometer = spectrometer
+  let
+    testType :: TestType
+    testType = review (genericSpectrometer @TestType @TestType) 1
 
-superTuple :: Tuple5 Int Int Int Int Int
-superTuple = review superSpectrometer 1
+  logShow testType -- (TestType 1 1 1 1)
+
+  let
+    testRecord :: { a :: Int, b :: Int, c :: Int, d :: Int }
+    testRecord = review recordSpectrometer 1
+
+    testRecord2 :: { a :: Int, b :: Int, c :: Int, d :: Int }
+    testRecord2 = over recordSpectrometer (_ * 2) testRecord
+
+  logShow testRecord -- { a: 1, b: 1, c: 1, d: 1 }
+  logShow testRecord2 -- { a: 2, b: 2, c: 2, d: 2 }
+
+  let
+    price :: Item -> Int
+    price Pen = 10
+    price Pencil = 5
+    price Paper = 20
+
+    newPrice :: Item -> Int
+    newPrice = over boundedEnumSpectrometer (_ * 2) price
+
+    newPrices :: Array Int
+    newPrices = toArrayOf boundedEnumSpectrometer newPrice
+
+  logShow newPrices -- [20,10,40]
 
 -- | Generics Test
 data TestType = TestType Int Int Int Int
@@ -35,18 +61,24 @@ derive instance Generic TestType _
 instance Show TestType where
   show = genericShow
 
-testTypeSpectrometer :: Spectrometer' TestType Int
-testTypeSpectrometer = genericSpectrometer
+data Item = Pen | Pencil | Paper
 
-testType :: TestType
-testType = review testTypeSpectrometer 1
+derive instance Generic Item _
+derive instance Eq Item
+derive instance Ord Item
 
-testRecordSpectrometer :: Spectrometer' { a :: Int, b :: Int, c :: Int, d :: Int } Int
-testRecordSpectrometer = recordSpectrometer
+instance Show Item where
+  show = genericShow
 
-testRecord :: { a :: Int, b :: Int, c :: Int, d :: Int }
-testRecord = review testRecordSpectrometer 1
+instance Enum Item where
+  succ = genericSucc
+  pred = genericPred
 
-record = { a: logShow 1, b: logShow 2 }
+instance Bounded Item where
+  bottom = genericBottom
+  top = genericTop
 
-logs = sequenceOf recordSpectrometer record
+instance BoundedEnum Item where
+  cardinality = genericCardinality
+  toEnum = genericToEnum
+  fromEnum = genericFromEnum

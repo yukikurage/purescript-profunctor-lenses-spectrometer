@@ -2,11 +2,11 @@ module Data.Lens.Spectrometer.Record where
 
 import Prelude
 
+import Data.Enum (class BoundedEnum)
 import Data.Lens (Iso, iso, withIso)
-import Data.Lens.Spectrometer (Spectrometer, spectrometer)
+import Data.Lens.Spectrometer (Spectrometer, tupleSpectrometer)
 import Data.Lens.Spectrometer.Internal.Cable (class CableToTuple, Cable)
 import Data.Symbol (class IsSymbol)
-import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(..))
 import Prim.Row as R
 import Prim.RowList (class RowToList, RowList)
@@ -36,11 +36,11 @@ instance
   , RecordIso rlS rlT s t tupleA tupleB
   , CableToTuple (Cable thickness a) tupleA
   , CableToTuple (Cable thickness b) tupleB
-  , Traversable (Cable thickness)
+  , BoundedEnum thickness
   ) =>
   RecordSpectrometer s t a b
   where
-  recordSpectrometer = recordIso (Proxy :: Proxy rlS) (Proxy :: Proxy rlT) <<< spectrometer
+  recordSpectrometer = recordIso (Proxy :: Proxy rlS) (Proxy :: Proxy rlT) <<< tupleSpectrometer
 
 class RecordIso :: RL.RowList Type -> RL.RowList Type -> Row Type -> Row Type -> Type -> Type -> Constraint
 class RecordIso rlS rlT s t a b | rlS -> s a, rlT -> t b where

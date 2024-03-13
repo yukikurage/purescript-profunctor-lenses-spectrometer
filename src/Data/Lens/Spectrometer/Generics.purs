@@ -2,54 +2,46 @@ module Data.Lens.Spectrometer.Generics where
 
 import Prelude
 
+import Data.Enum (class BoundedEnum)
 import Data.Generic.Rep as G
 import Data.Lens (Iso, iso, withIso)
 import Data.Lens.Spectrometer (Spectrometer, spectrometer)
-import Data.Lens.Spectrometer.Internal.Cable (class CableToTuple, Cable)
-import Data.Traversable (class Traversable)
-import Data.Tuple (Tuple(..))
+import Data.Lens.Spectrometer.Internal.Cable (Cable, cons, head, nil, tail)
+import Data.Lens.Spectrometer.Internal.Idx (Idx)
 
-class GenericSpectrometer :: Type -> Type -> Type -> Type -> Constraint
-class GenericSpectrometer s t a b | s -> a, t -> b where
-  genericSpectrometer :: Spectrometer s t a b
+class GenericSpectrometer :: Type -> Type -> Type -> Type -> Type -> Constraint
+class GenericSpectrometer typeA typeB size a b | typeA -> size a, typeB -> size b where
+  genericSpectrometer :: Spectrometer typeA typeB a b
 
--- | Rep 用
-class GenericSpectrometerRep s t a b | s -> a, t -> b where
-  genericSpectrometerRep :: Spectrometer s t a b
+instance (TypeCableIso size a b typeA typeB, BoundedEnum size) => GenericSpectrometer typeA typeB size a b where
+  genericSpectrometer = typeCableIso <<< spectrometer
 
--- | Argument 用
--- | Argument と Tuple の Iso
-class ArgumentIso s t a b | s -> a, t -> b where
-  argumentIso :: Iso s t a b
+-- | Type と Cable の Iso
+class TypeCableIso size a b typeA typeB | typeA -> size a, typeB -> size b where
+  typeCableIso :: Iso typeA typeB (Cable size a) (Cable size b)
 
-instance
-  ( G.Generic s repS
-  , G.Generic t repT
-  , GenericSpectrometerRep repS repT a b
-  ) =>
-  GenericSpectrometer s t a b where
-  genericSpectrometer = iso G.from G.to <<< genericSpectrometerRep
+instance (RepCableIso size a b repA repB, G.Generic typeA repA, G.Generic typeB repB) => TypeCableIso size a b typeA typeB where
+  typeCableIso = iso G.from G.to <<< repCableIso
 
--- -- | Constructor 1 つにしか対応しないので Product は考えない
-instance
-  ( ArgumentIso s t tupleA tupleB
-  , CableToTuple (Cable thickness a) tupleA
-  , CableToTuple (Cable thickness b) tupleB
-  , Traversable (Cable thickness)
-  ) =>
-  GenericSpectrometerRep (G.Constructor symS s) (G.Constructor symT t) a b where
-  genericSpectrometerRep = constructorIso <<< argumentIso <<< spectrometer
+-- | Rep と Cable の Iso
+class RepCableIso size a b repA repB | size a -> repA, repA -> size a, size b -> repB, repB -> size b where
+  repCableIso :: Iso repA repB (Cable size a) (Cable size b)
+
+instance ArgumentCableIso size a b argA argB => RepCableIso size a b (G.Constructor sym argA) (G.Constructor sym argB) where
+  repCableIso = constructorIso <<< argumentCableIso
     where
-    constructorIso :: Iso (G.Constructor _ s) (G.Constructor _ t) s t
-    constructorIso = iso (\(G.Constructor s) -> s) G.Constructor
+    constructorIso :: Iso (G.Constructor sym argA) (G.Constructor sym argB) argA argB
+    constructorIso = iso (\(G.Constructor arg) -> arg) G.Constructor
 
-instance ArgumentIso G.NoArguments G.NoArguments Unit Unit where
-  argumentIso = iso (\_ -> unit) (\_ -> G.NoArguments)
+-- | Argument と Cable の Iso
+class ArgumentCableIso size a b argA argB | size a -> argA, argA -> size a, size b -> argB, argB -> size b where
+  argumentCableIso :: Iso argA argB (Cable size a) (Cable size b)
 
-instance ArgumentIso (G.Argument a) (G.Argument b) (Tuple a Unit) (Tuple b Unit) where
-  argumentIso = iso (\(G.Argument a) -> Tuple a unit) (\(Tuple b _) -> G.Argument b)
+instance ArgumentCableIso Void a b G.NoArguments G.NoArguments where
+  argumentCableIso = iso (\_ -> nil) (\_ -> G.NoArguments)
 
-instance (ArgumentIso argS argT tupleA tupleB) => ArgumentIso (G.Product (G.Argument a) argS) (G.Product (G.Argument b) argT) (Tuple a tupleA) (Tuple b tupleB) where
-  argumentIso = iso (\(G.Product (G.Argument a) argS) -> Tuple a $ argSToTuple argS) (\(Tuple b tupleB) -> G.Product (G.Argument b) (tupleToArgT tupleB))
-    where
-    Tuple (argSToTuple :: argS -> tupleA) (tupleToArgT :: tupleB -> argT) = withIso argumentIso Tuple
+instance ArgumentCableIso (Idx Void) a b (G.Argument a) (G.Argument b) where
+  argumentCableIso = iso (\(G.Argument a) -> a `cons` nil) (\cable -> G.Argument $ head cable)
+
+else instance ArgumentCableIso size a b argA argB => ArgumentCableIso (Idx size) a b (G.Product (G.Argument a) argA) (G.Product (G.Argument b) argB) where
+  argumentCableIso = withIso argumentCableIso \argToCableA cableToArgB -> iso (\(G.Product (G.Argument a) argA) -> a `cons` argToCableA argA) (\cable -> G.Product (G.Argument $ head cable) $ cableToArgB $ tail cable)
