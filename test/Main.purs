@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude
 
 import Data.Generic.Rep (class Generic)
-import Data.Lens (review)
+import Data.Lens (review, sequenceOf)
 import Data.Lens.Spectrometer (Spectrometer', spectrometer)
 import Data.Lens.Spectrometer.Generics (genericSpectrometer)
 import Data.Lens.Spectrometer.Record (recordSpectrometer)
@@ -17,6 +17,7 @@ main = do
   logShow superTuple
   logShow testType
   logShow testRecord
+  void $ logs
 
 type SuperTuple a = Tuple5 a a a a a
 
@@ -45,3 +46,7 @@ testRecordSpectrometer = recordSpectrometer
 
 testRecord :: { a :: Int, b :: Int, c :: Int, d :: Int }
 testRecord = review testRecordSpectrometer 1
+
+record = { a: logShow 1, b: logShow 2 }
+
+logs = sequenceOf recordSpectrometer record
