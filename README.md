@@ -154,3 +154,25 @@ instance Distributive f => Thicken (Star f) where
 
 What does this mean?
 I chose thickenFromWander for traverseOf this time, but is it appropriate?
+
+### Representable and Closed
+
+```purescript
+class Strong p <= Closed' p where
+  closed' :: forall a b i f. Representable i f => p a b -> p (f a) (f b)
+```
+
+Is this isomorphic to the original Closed?
+
+If so, what `cotraversed` function represent?
+
+```purescript
+cotraversed :: forall f a b. Distributive f => Grate (f a) (f b) a b
+```
+
+How about the following?
+
+```purescript
+class Strong p <= Closed' p where
+  closed' :: forall a b f. Distributive f => p a b -> p (f a) (f b)
+```
