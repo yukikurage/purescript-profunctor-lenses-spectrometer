@@ -161,8 +161,6 @@ There are such hierarchies:
 Distributive == Representable => Monad => Applicative
 ```
 
-Ref: https://github.com/viercc/kitchen-sink-hs/blob/d4cc6fac22728790174efbc112cec3d3b3efeacc/experiment/src/Distributive.hs#L142-L160
-
 Therefore, `Applicative f => Thicken (Star f)` includes `Distributive f => Thicken (Star f)`.
 
 #### Old content
