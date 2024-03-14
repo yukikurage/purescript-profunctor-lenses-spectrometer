@@ -163,6 +163,33 @@ Distributive == Representable => Monad => Applicative
 
 Therefore, `Applicative f => Thicken (Star f)` includes `Distributive f => Thicken (Star f)`.
 
+ref:
+from @viercc
+
+```haskell
+---- Distributive => Representable
+newtype Distr g x = Distr { runDistr :: g x }
+                  deriving (Show, Eq, Functor)
+
+instance Distributive g => Distributive (Distr g) where
+  distribute = Distr . distribute . fmap runDistr
+
+newtype Key f = Key { getKey :: forall x. f x -> x }
+
+instance Distributive g => Representable (Distr g) where
+  type Rep (Distr g) = Key (Distr g)
+  index distr key = getKey key distr
+  tabulate f = fmap f tableD
+
+tableD :: Distributive g => g (Key g)
+tableD = fmap unsafeCoerce $ distribute id
+  {- id :: forall a. g a -> g a
+     distribute id :: forall a. g (g a -> a)
+     tableD :: g (Key g) = g (forall a. g a -> a)   -}
+```
+
+The part of `unsafeCoerce` is actually safe, by Distributive laws.
+
 #### Old content
 
 Star instances can be defined in two ways.
