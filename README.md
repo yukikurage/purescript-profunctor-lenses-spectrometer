@@ -2,6 +2,10 @@
 
 Spectrometer is a Optics for data types of several values typed with the same type.
 
+## Note
+
+This optics is same as `Grid` on https://hackage.haskell.org/package/lens-family-2.1.2/docs/Lens-Family2.html#t:Grid
+
 ## Installation
 
 UNDER CONSTRUCTION
