@@ -5,6 +5,7 @@ import Prelude
 import Data.Functor.Costar (Costar)
 import Data.Lens (class Wander, Forget, Tagged, wander)
 import Data.Lens.Internal.Zipping (Zipping)
+import Data.Lens.Spectrometer.Internal.Aligned (class Aligned)
 import Data.Lens.Spectrometer.Internal.Representable (class Representable, index, tabulate)
 import Data.Profunctor (class Profunctor, dimap)
 import Data.Profunctor.Closed (class Closed, closed)
@@ -17,8 +18,11 @@ import Data.Traversable (class Traversable, traverse)
 -- | ```
 -- | However, PureScript evaluates expressions strictly, so infinite `Stream` cannot be Traversable
 -- | Instead, use `Traversable f, Representable i f` to indicate _finite_ data structure
+-- |
+-- | `thicken` must satisfy the following laws:
+-- | - `dimap (\a -> Cable \_ -> a) (\(Cable f) -> f i) (thicken pab) == pab`
 class Profunctor p <= Thicken p where
-  thicken :: forall i f a b. Traversable f => Representable i f => p a b -> p (f a) (f b)
+  thicken :: forall i f a b. Aligned i f => p a b -> p (f a) (f b)
 
 thickenFromClosed :: forall p f a i b. Closed p => Representable i f => p a b -> p (f a) (f b)
 thickenFromClosed = dimap index tabulate <<< closed

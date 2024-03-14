@@ -6,12 +6,15 @@ import Data.Distributive (class Distributive)
 import Data.Enum (class BoundedEnum, enumFromTo)
 import Data.Foldable (class Foldable, foldMap, foldl, foldr)
 import Data.Lens (Iso, iso)
+import Data.Lens.Spectrometer.Internal.Aligned (class Aligned)
 import Data.Lens.Spectrometer.Internal.Idx (Idx(..))
 import Data.Lens.Spectrometer.Internal.Representable (class Representable)
 import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(..))
 import Partial.Unsafe (unsafeCrashWith)
 
+-- | Wrapper for a function, becoming `Traversable` when the index type is `BoundedEnum`.
+-- | Cable usually uses `Idx` as the index type.
 newtype Cable i a = Cable (i -> a)
 
 derive newtype instance Functor (Cable i)
@@ -45,6 +48,8 @@ instance BoundedEnum a => Traversable (Cable a) where
     unsafe :: forall i x. Cable i x
     unsafe = Cable \_ -> unsafeCrashWith "Data.Lens.Spectrometer.Internal.Cable.sequence: impossible"
     f i accA = (\iElem (Cable acc) -> Cable \j -> if j == i then iElem else acc j) <$> dict i <*> accA
+
+instance BoundedEnum i => Aligned i (Cable i)
 
 nil :: forall a. Cable Void a
 nil = Cable absurd

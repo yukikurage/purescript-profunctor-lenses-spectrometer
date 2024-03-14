@@ -10,7 +10,7 @@ When creating a new Spago project, you can use
 `spago init --no-comments` or `spago init -C`
 to generate this file without the comments in this block.
 -}
-{ name = "my-project"
+{ name = "profunctor-lenses-spectrometer"
 , dependencies =
   [ "console"
   , "distributive"
@@ -19,7 +19,6 @@ to generate this file without the comments in this block.
   , "foldable-traversable"
   , "functors"
   , "identity"
-  , "leibniz"
   , "maybe"
   , "pairs"
   , "partial"
@@ -27,7 +26,6 @@ to generate this file without the comments in this block.
   , "profunctor"
   , "profunctor-lenses"
   , "record"
-  , "safe-coerce"
   , "transformers"
   , "tuples"
   ]

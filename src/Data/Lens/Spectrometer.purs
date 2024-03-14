@@ -4,11 +4,9 @@ import Prelude
 
 import Data.Enum (class BoundedEnum)
 import Data.Lens (Optic, iso, re)
+import Data.Lens.Spectrometer.Internal.Aligned (class Aligned)
 import Data.Lens.Spectrometer.Internal.Cable (class CableToTuple, Cable(..), cableTupleIso)
-import Data.Lens.Spectrometer.Internal.Representable (class Representable)
 import Data.Lens.Spectrometer.Internal.Thicken (class Thicken, thicken)
-import Data.Traversable (class Traversable)
-import Safe.Coerce (coerce)
 
 -- | Between Iso and Grate
 -- | and between Iso and Traversal !
@@ -18,8 +16,7 @@ type Spectrometer' s a = Spectrometer s s a a
 
 spectrometer
   :: forall i f a b
-   . Traversable f
-  => Representable i f
+   . Aligned i f
   => Spectrometer (f a) (f b) a b
 spectrometer = thicken
 
@@ -35,4 +32,4 @@ boundedEnumSpectrometer
   :: forall key a b
    . BoundedEnum key
   => Spectrometer (key -> a) (key -> b) a b
-boundedEnumSpectrometer = iso Cable coerce <<< spectrometer
+boundedEnumSpectrometer = iso Cable (\(Cable f) -> f) <<< spectrometer
