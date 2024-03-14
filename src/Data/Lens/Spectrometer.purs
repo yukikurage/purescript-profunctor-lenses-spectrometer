@@ -6,6 +6,7 @@ import Data.Enum (class BoundedEnum)
 import Data.Lens (Optic, iso, re)
 import Data.Lens.Spectrometer.Internal.Cable (class CableToTuple, Cable(..), cableTupleIso)
 import Data.Lens.Spectrometer.Internal.Representable (class Representable)
+import Data.Lens.Spectrometer.Internal.Thicken (class Thicken, thicken)
 import Data.Traversable (class Traversable)
 import Safe.Coerce (coerce)
 

@@ -25,8 +25,7 @@ main = do
 
   let
     testType :: TestType
-    testType = review (genericSpectrometer @TestType @TestType) 1
-
+    testType = review (genericSpectrometer @TestType @TestType) 1 -- Need to annotate type for type inference
   logShow testType -- (TestType 1 1 1 1)
 
   let

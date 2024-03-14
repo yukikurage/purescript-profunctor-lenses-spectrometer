@@ -8,7 +8,7 @@ import Data.Identity (Identity(..))
 import Data.Pair (Pair(..))
 import Data.Tuple (Tuple(..))
 
-class Distributive f <= Representable i f | f -> i where
+class (Distributive f, Monad f) <= Representable i f | f -> i where
   tabulate :: forall a. (i -> a) -> f a
   index :: forall a. f a -> i -> a
 

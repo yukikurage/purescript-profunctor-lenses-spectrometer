@@ -125,6 +125,17 @@ type Spectrometer s t a b = forall p. Thicken p => Optic p s t a b
 
 `Closed p => Optics p s t a b` is a Grate and `Wander p => Optics p s t a b` is a Traversal, so the Spectrometer is their intersection.
 
+## In Haskell...
+
+Thicken can be implemented by different way.
+
+```haskell
+class Profunctor p <= Thicken p where
+  thicken :: forall a b. p a b -> p (Stream a) (Stream b)
+```
+
+PureScript evaluates values strictly unlike Haskell, so unfortunately this definition is more "general" than the previous one, and no longer super class of `Wander`.
+
 ## Issues?
 
 ### Composability
@@ -142,6 +153,20 @@ However, such a function `composeSpectrometers` has not been created. It may not
 
 ### Star Instance
 
+**SOLVED**
+
+There are such hierarchies:
+
+```
+Distributive == Representable => Monad => Applicative
+```
+
+Ref: https://github.com/viercc/kitchen-sink-hs/blob/d4cc6fac22728790174efbc112cec3d3b3efeacc/experiment/src/Distributive.hs#L142-L160
+
+Therefore, `Applicative f => Thicken (Star f)` includes `Distributive f => Thicken (Star f)`.
+
+#### Old content
+
 Star instances can be defined in two ways.
 
 ```purescript
@@ -156,6 +181,12 @@ What does this mean?
 I chose thickenFromWander for traverseOf this time, but is it appropriate?
 
 ### Representable and Closed
+
+**SOLVED**
+
+Same as the "Star Instance" section, `Distributive == Representable`, so `Closed' == Closed`
+
+#### Old content
 
 ```purescript
 class Strong p <= Closed' p where

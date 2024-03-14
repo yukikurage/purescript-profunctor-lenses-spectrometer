@@ -4,61 +4,47 @@ import Prelude
 
 import Data.Enum (class BoundedEnum)
 import Data.Lens (Iso, iso, withIso)
-import Data.Lens.Spectrometer (Spectrometer, tupleSpectrometer)
-import Data.Lens.Spectrometer.Internal.Cable (class CableToTuple, Cable)
+import Data.Lens.Spectrometer (Spectrometer, spectrometer)
+import Data.Lens.Spectrometer.Internal.Cable (Cable, cons, head, nil, tail)
+import Data.Lens.Spectrometer.Internal.Idx (Idx)
 import Data.Symbol (class IsSymbol)
-import Data.Tuple (Tuple(..))
 import Prim.Row as R
-import Prim.RowList (class RowToList, RowList)
 import Prim.RowList as RL
 import Record (delete, get, insert)
 import Type.Proxy (Proxy(..))
 
 class RecordSpectrometer :: Row Type -> Row Type -> Type -> Type -> Constraint
-class RecordSpectrometer s t a b | s -> a, t -> b where
-  recordSpectrometer :: Spectrometer (Record s) (Record t) a b
-
-data UnitK
-
-foreign import data UnitT :: UnitK
-
-class FillRecord :: RowList UnitK -> Type -> RowList Type -> Constraint
-class FillRecord rl a r | rl a -> r, r -> rl a
-
-instance FillRecord RL.Nil a RL.Nil
-instance (FillRecord rl a rl') => FillRecord (RL.Cons sym UnitT rl) a (RL.Cons sym a rl')
+class RecordSpectrometer rowA rowB a b | rowA -> a, rowB -> b where
+  recordSpectrometer :: Spectrometer (Record rowA) (Record rowB) a b
 
 instance
-  ( FillRecord rl a rlS
-  , FillRecord rl b rlT
-  , RowToList s rlS
-  , RowToList t rlT
-  , RecordIso rlS rlT s t tupleA tupleB
-  , CableToTuple (Cable thickness a) tupleA
-  , CableToTuple (Cable thickness b) tupleB
-  , BoundedEnum thickness
+  ( RL.RowToList rowA rlA
+  , RL.RowToList rowB rlB
+  , RecordCableIso rlA rlB rowA rowB idx a b
+  , BoundedEnum idx
   ) =>
-  RecordSpectrometer s t a b
+  RecordSpectrometer rowA rowB a b
   where
-  recordSpectrometer = recordIso (Proxy :: Proxy rlS) (Proxy :: Proxy rlT) <<< tupleSpectrometer
+  recordSpectrometer = recordCableIso @rlA @rlB <<< spectrometer
 
-class RecordIso :: RL.RowList Type -> RL.RowList Type -> Row Type -> Row Type -> Type -> Type -> Constraint
-class RecordIso rlS rlT s t a b | rlS -> s a, rlT -> t b where
-  recordIso :: Proxy rlS -> Proxy rlT -> Iso (Record s) (Record t) a b
+class RecordCableIso :: RL.RowList Type -> RL.RowList Type -> Row Type -> Row Type -> Type -> Type -> Type -> Constraint
+class
+  RecordCableIso rlA rlB rowA rowB idx a b
+  | rlA -> idx a -- Infer size and a from rlA
+  , rlB -> idx b -- Infer size and b from rlB
+  , rlA b -> rlB -- rlB has same shape as rlA, this fundep makes type inference work better.
+  , rlB a -> rlA -- rlA has same shape as rlB, this fundep makes type inference work better.
+  , rlA -> rowA -- Infer rowA from RowList rlA
+  , rlB -> rowB -- Infer rowB from RowList rlB
+  where
+  recordCableIso :: Iso (Record rowA) (Record rowB) (Cable idx a) (Cable idx b)
 
-instance RecordIso RL.Nil RL.Nil () () Unit Unit where
-  recordIso _ _ = iso (\_ -> unit) (\_ -> {})
+instance RecordCableIso RL.Nil RL.Nil () () Void a b where
+  recordCableIso = iso (\_ -> nil) (\_ -> {})
 
-instance
-  ( RecordIso rlS rlT tailS tailT tailA tailB
-  , R.Cons sym a tailS s
-  , R.Lacks sym tailS
-  , R.Cons sym b tailT t
-  , R.Lacks sym tailT
-  , IsSymbol sym
-  ) =>
-  RecordIso (RL.Cons sym a rlS) (RL.Cons sym b rlT) s t (Tuple a tailA) (Tuple b tailB) where
-  recordIso _ _ = iso (\rec -> Tuple (get sym rec) (tailSToTailA $ delete sym rec)) (\(Tuple b tailB) -> insert sym b $ tailBToTailT tailB)
+instance (RecordCableIso tailRlA tailRlB tailRowA tailRowB idx a b, R.Cons sym a tailRowA rowA, R.Lacks sym tailRowA, R.Cons sym b tailRowB rowB, R.Lacks sym tailRowB, IsSymbol sym) => RecordCableIso (RL.Cons sym a tailRlA) (RL.Cons sym b tailRlB) rowA rowB (Idx idx) a b where
+  recordCableIso = withIso (recordCableIso @tailRlA @tailRlB) \recordToCableA cableToRecordB ->
+    iso (\rec -> get sym rec `cons` (recordToCableA $ delete sym rec)) (\cable -> insert sym (head cable) $ cableToRecordB (tail cable))
     where
-    sym = Proxy :: _ sym
-    Tuple (tailSToTailA :: Record tailS -> tailA) (tailBToTailT :: tailB -> Record tailT) = withIso (recordIso (Proxy :: Proxy rlS) (Proxy :: Proxy rlT)) Tuple
+    sym :: Proxy sym
+    sym = Proxy
